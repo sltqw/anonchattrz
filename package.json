@@ -1,0 +1,14 @@
+{
+  "name": "anon-shared-chat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Anonymous group chat with shared profiles, presence and private messages",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
