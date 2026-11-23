@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Анонимный Групповой Чат — Ultra Liquid Glass</title>
+  <style>
+    :root {
+      --bg-base: #07090f;
+      --glass-surface: rgba(255, 255, 255, 0.045);
+      --glass-elevated: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.22);
+      --glass-highlight: rgba(255, 255, 255, 0.25);
+      --ios-blue: #0a84ff;
+      --ios-blue-glow: rgba(10, 132, 255, 0.35);
+      --ios-green: #30d158;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(235, 235, 245, 0.68);
+      --text-tertiary: rgba(235, 235, 245, 0.44);
+      --bubble-other: rgba(255, 255, 255, 0.055);
+      --bubble-me: linear-gradient(135deg, rgba(10, 132, 255, 0.72) 0%, rgba(0, 102, 235, 0.85) 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(7, 9, 15, 0.45) 0%, rgba(7, 9, 15, 0.62) 100%),
+        radial-gradient(circle at 15% 15%, rgba(10, 132, 255, 0.25) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(94, 92, 230, 0.22) 0%, transparent 48%),
+        radial-gradient(circle at 50% 88%, rgba(48, 209, 88, 0.16) 0%, transparent 50%),
+        url("tv.jpg") center / cover no-repeat;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: rgba(16, 19, 28, 0.28);
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .liquid-glass {
+      position: relative;
+      background: rgba(255, 255, 255, 0.045) !important;
+      backdrop-filter: blur(35px) saturate(200%);
+      -webkit-backdrop-filter: blur(35px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.25),
+        0 12px 35px rgba(0, 0, 0, 0.18);
+    }
+
+    .liquid-glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.16),
+        transparent 45%,
+        rgba(255, 255, 255, 0.03)
+      );
+    }
+
+    @keyframes glassFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .top-stack {
+      padding: 12px 14px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .glass-pill-bar {
+      border-radius: 26px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      animation: glassFloat 4.5s ease-in-out infinite;
+    }
+
+    .room-cluster {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .room-orb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+
+    .room-orb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+    }
+
+    .room-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .room-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .room-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .music-orb-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.28),
+        inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .music-orb-btn.playing {
+      border-color: rgba(48, 209, 88, 0.85);
+      box-shadow: 0 0 14px rgba(48, 209, 88, 0.45);
+    }
+
+    .music-orb-btn:hover {
+      transform: scale(1.07);
+      border-color: rgba(10, 132, 255, 0.75);
+      box-shadow: 0 0 14px rgba(10, 132, 255, 0.35);
+    }
+
+    .music-orb-btn:active {
+      transform: scale(0.92);
+    }
+
+    .music-orb-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .music-orb-fallback {
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .mini-now-playing {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(48, 209, 88, 0.14);
+      border: 1px solid rgba(48, 209, 88, 0.35);
+      font-size: 11px;
+      font-weight: 600;
+      color: #9af7b0;
+      max-width: 150px;
+      flex-shrink: 0;
+    }
+
+    .mini-now-playing.visible {
+      display: inline-flex;
+    }
+
+    .mini-now-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-toggle-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 10px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .room-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ios-green);
+      box-shadow: 0 0 8px var(--ios-green);
+      display: inline-block;
+    }
+
+    button, .btn, .ios-btn, .send-circle, .upload-label {
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after, .btn::after, .ios-btn::after, .send-circle::after, .upload-label::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        110deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.28),
+        transparent 70%
+      );
+      transform: translateX(-120%);
+      transition: transform 0.6s ease;
+      pointer-events: none;
+    }
+
+    button:hover::after,
+    .btn:hover::after,
+    .ios-btn:hover::after,
+    .send-circle:hover::after,
+    .upload-label:hover::after {
+      transform: translateX(120%);
+    }
+
+    .ios-btn {
+      z-index: 1;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(200%);
+      -webkit-backdrop-filter: blur(20px) saturate(200%);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.18s ease, border-color 0.18s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ios-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.36);
+    }
+
+    .ios-btn:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .ios-btn.primary {
+      background: rgba(10, 132, 255, 0.24);
+      border-color: rgba(10, 132, 255, 0.6);
+      color: #9ed2ff;
+      box-shadow:
+        0 4px 18px rgba(10, 132, 255, 0.22),
+        inset 0 1px 1px rgba(255, 255, 255, 0.32);
+    }
+
+    .ios-btn.primary:hover {
+      background: rgba(10, 132, 255, 0.34);
+    }
+
+    .profile-capsule {
+      border-radius: 22px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.25),
+        0 4px 12px rgba(0, 0, 0, 0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .meta {
+      min-width: 0;
+    }
+
+    .meta .nick {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta .fixed-id {
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(145, 205, 255, 0.95);
+      background: rgba(10, 132, 255, 0.16);
+      border: 1px solid rgba(10, 132, 255, 0.3);
+      padding: 1px 7px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 40;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .sheet-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .glass-sheet {
+      position: fixed;
+      left: 50%;
+      bottom: 14px;
+      transform: translate(-50%, 110%);
+      width: calc(100% - 24px);
+      max-width: 640px;
+      z-index: 50;
+      background: rgba(24, 28, 40, 0.82);
+      backdrop-filter: blur(40px) saturate(210%);
+      -webkit-backdrop-filter: blur(40px) saturate(210%);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        inset 0 1px 1px rgba(255, 255, 255, 0.28);
+      border-radius: 32px;
+      padding: 14px 18px 20px;
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .glass-sheet::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.14),
+        transparent 45%,
+        rgba(255, 255, 255, 0.02)
+      );
+    }
+
+    .glass-sheet.open {
+      transform: translate(-50%, 0);
+    }
+
+    .sheet-grabber {
+      width: 38px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.32);
+      margin: 0 auto 14px;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sheet-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .sheet-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .music-empty-box {
+      position: relative;
+      z-index: 1;
+      padding: 28px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .music-cover-preview {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    }
+
+    .music-cover-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .music-empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .music-empty-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .persistent-player-card {
+      position: relative;
+      z-index: 1;
+      padding: 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(10, 132, 255, 0.12);
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .persistent-player-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .persistent-player-card audio {
+      width: 100%;
+      height: 36px;
+      border-radius: 12px;
+    }
+
+    .music-track-list {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .music-track-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .music-track-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+
+    .music-track-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.16s ease, border-color 0.16s ease;
+    }
+
+    .music-track-item:hover {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .music-track-item.active {
+      background: rgba(48, 209, 88, 0.16);
+      border-color: rgba(48, 209, 88, 0.65);
+    }
+
+    .music-track-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .music-track-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .music-track-file {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .music-track-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #9ed2ff;
+      flex-shrink: 0;
+    }
+
+    .music-track-item.active .music-track-badge {
+      color: #8df5a6;
+    }
+
+    .ios-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .ios-input {
+      flex: 1;
+      padding: 11px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .ios-input:focus {
+      border-color: var(--ios-blue);
+      box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+    }
+
+    .preset-avatars-block {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 14px;
+    }
+
+    .preset-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .preset-card {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 4px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .preset-card:hover {
+      background: rgba(255, 255, 255, 0.11);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .preset-card:active {
+      transform: scale(0.95);
+    }
+
+    .preset-card.selected {
+      background: rgba(10, 132, 255, 0.22);
+      border-color: rgba(10, 132, 255, 0.8);
+      box-shadow: 0 0 16px rgba(10, 132, 255, 0.3);
+    }
+
+    .preset-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .preset-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preset-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .preset-name {
+      font-size: 10px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(200%);
+      -webkit-backdrop-filter: blur(20px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sheet-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 16px 115px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+
+    .system-pill {
+      position: relative;
+      align-self: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(25px) saturate(200%);
+      -webkit-backdrop-filter: blur(25px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      padding: 5px 13px;
+      border-radius: 999px;
+      margin: 4px 0;
+    }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 9px;
+      max-width: 84%;
+      animation: bubbleIn 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .msg-row.me {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    @keyframes bubbleIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .msg-row .avatar {
+      width: 34px;
+      height: 34px;
+      font-size: 13px;
+    }
+
+    .bubble {
+      position: relative;
+      background: rgba(255, 255, 255, 0.055);
+      backdrop-filter: blur(35px) saturate(200%);
+      -webkit-backdrop-filter: blur(35px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.25),
+        0 10px 28px rgba(0, 0, 0, 0.14);
+      padding: 9px 13px;
+      border-radius: 20px 20px 20px 6px;
+    }
+
+    .bubble::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15),
+        transparent 48%,
+        rgba(255, 255, 255, 0.03)
+      );
+    }
+
+    .msg-row.me .bubble {
+      background: var(--bubble-me);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow:
+        0 8px 24px rgba(10, 132, 255, 0.28),
+        inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      border-radius: 20px 20px 6px 20px;
+    }
+
+    .msg-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .msg-nick {
+      font-size: 12px;
+      font-weight: 600;
+      color: #8cc8ff;
+    }
+
+    .msg-row.me .msg-nick {
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    .msg-id {
+      font-size: 10px;
+      color: var(--text-tertiary);
+    }
+
+    .msg-row.me .msg-id {
+      color: rgba(255, 255, 255, 0.76);
+    }
+
+    .msg-text {
+      font-size: 15px;
+      line-height: 1.38;
+      letter-spacing: -0.01em;
+      word-break: break-word;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: var(--text-tertiary);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .msg-row.me .msg-time {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .composer-dock {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 28px);
+      max-width: 652px;
+      z-index: 30;
+      padding: 8px 10px 8px 14px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.08) !important;
+      backdrop-filter: blur(35px) saturate(200%);
+      -webkit-backdrop-filter: blur(35px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.28),
+        0 10px 35px rgba(0, 0, 0, 0.25);
+    }
+
+    .composer-dock::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.16),
+        transparent 50%,
+        rgba(255, 255, 255, 0.03)
+      );
+    }
+
+    .composer-pill {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .composer-pill input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      padding: 6px 2px;
+    }
+
+    .composer-pill input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .send-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(10, 132, 255, 0.26);
+      backdrop-filter: blur(20px) saturate(200%);
+      -webkit-backdrop-filter: blur(20px) saturate(200%);
+      color: #9ed2ff;
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow:
+        0 4px 14px rgba(10, 132, 255, 0.25),
+        inset 0 1px 1px rgba(255, 255, 255, 0.34);
+      transition: transform 0.16s ease, background 0.16s ease;
+      flex-shrink: 0;
+    }
+
+    .send-circle:hover {
+      background: rgba(10, 132, 255, 0.38);
+    }
+
+    .send-circle:active {
+      transform: scale(0.9);
+    }
+
+    .protected-footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .protected-footer svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* Адаптация для телефонов и небольших экранов */
+    html {
+      min-height: 100%;
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      min-height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      min-height: 0;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .top-stack {
+      padding-top: max(10px, env(safe-area-inset-top));
+    }
+
+    .messages {
+      min-height: 0;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(125px + env(safe-area-inset-bottom));
+    }
+
+    .glass-sheet {
+      max-height: calc(100dvh - 28px - env(safe-area-inset-top));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .composer-dock {
+      bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .people-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .person-row { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid rgba(255,255,255,.13); border-radius:16px; background:rgba(255,255,255,.055); color:#fff; width:100%; text-align:left; cursor:pointer; }
+    .person-row .avatar { width:38px; height:38px; }
+    .person-info { min-width:0; flex:1; }
+    .person-nick { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .person-id,.people-empty { color:var(--text-secondary); font-size:12px; }
+    .online-dot { width:8px; height:8px; border-radius:50%; background:#30d158; box-shadow:0 0 9px #30d158; }
+    .dm-messages { max-height:38vh; overflow:auto; display:flex; flex-direction:column; gap:8px; padding:8px 2px; }
+    .dm-bubble { max-width:88%; padding:9px 12px; border-radius:14px; background:rgba(255,255,255,.09); overflow-wrap:anywhere; font-size:14px; }
+    .dm-bubble.mine { align-self:flex-end; background:rgba(10,132,255,.35); }
+    .dm-meta { color:var(--text-secondary); font-size:10px; margin-bottom:3px; }
+    #peopleSheet .composer-pill { position:relative; bottom:auto; margin-bottom:4px; }
+
+    button, input, label {
+      touch-action: manipulation;
+    }
+
+    @media (max-width: 520px) {
+      .top-stack {
+        padding: 8px 9px 6px;
+        gap: 7px;
+      }
+
+      .glass-pill-bar {
+        padding: 8px 10px;
+        gap: 7px;
+        border-radius: 22px;
+      }
+
+      .room-orb {
+        width: 36px;
+        height: 36px;
+      }
+
+      .room-title {
+        font-size: 13px;
+      }
+
+      .room-sub {
+        font-size: 11px;
+      }
+
+      .profile-capsule {
+        padding: 7px 9px;
+        border-radius: 19px;
+      }
+
+      .avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .meta .nick {
+        max-width: 42vw;
+        font-size: 14px;
+      }
+
+      .ios-btn {
+        padding: 8px 11px;
+        font-size: 12px;
+      }
+
+      .messages {
+        padding: 8px 10px calc(112px + env(safe-area-inset-bottom));
+        gap: 8px;
+      }
+
+      .msg-row {
+        max-width: 92%;
+        gap: 7px;
+      }
+
+      .msg-row .avatar {
+        width: 30px;
+        height: 30px;
+      }
+
+      .bubble {
+        padding: 8px 11px;
+        border-radius: 17px 17px 17px 5px;
+      }
+
+      .msg-text {
+        font-size: 14px;
+      }
+
+      .composer-dock {
+        width: calc(100% - 18px);
+        bottom: max(8px, env(safe-area-inset-bottom));
+        padding: 7px 8px 7px 12px;
+      }
+
+      .composer-pill input {
+        min-width: 0;
+        font-size: 16px; /* Не даёт iOS автоматически увеличивать страницу при фокусе */
+      }
+
+      .sheet-header {
+        gap: 10px;
+      }
+
+      .sheet-title {
+        font-size: 16px;
+      }
+
+      .preset-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .preset-card {
+        min-width: 0;
+        padding: 7px 2px;
+      }
+
+      .preset-thumb {
+        width: min(44px, 11vw);
+        height: min(44px, 11vw);
+      }
+
+      .preset-name {
+        font-size: 9px;
+      }
+
+      .sheet-footer {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .room-sub {
+        max-width: 48vw;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .glass-pill-bar > .ios-btn {
+        padding-inline: 9px;
+      }
+
+      .user-badge {
+        gap: 8px;
+      }
+
+      .fixed-id {
+        font-size: 10px;
+      }
+
+      .preset-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-height: 620px) {
+      .top-stack {
+        gap: 5px;
+        padding-top: max(5px, env(safe-area-inset-top));
+      }
+
+      .glass-pill-bar {
+        padding-block: 6px;
+      }
+
+      .profile-capsule {
+        padding-block: 5px;
+      }
+
+      .messages {
+        padding-top: 5px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+<div class="ambient-bg"></div>
+
+<!-- Общий аудиоплеер -->
+<audio id="bgAudioPlayer" preload="metadata"></audio>
+
+<div class="app">
+  <div class="top-stack">
+    <div class="glass-pill-bar liquid-glass">
+      <div class="room-cluster">
+        <div class="room-orb">
+          <img src="data:image/png;base64,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" alt="Логотип" />
+        </div>
+        <div class="room-meta">
+          <div class="room-title-row">
+            <div class="room-title" id="roomLabel"></div>
+            <button
+              type="button"
+              class="music-orb-btn"
+              id="musicOrbBtn"
+              onclick="openMusicSheet()"
+              title="Музыка"
+              aria-label="Музыка"
+            >
+              <img
+                src="u.jpg"
+                alt="Музыка"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"
+              />
+              <span class="music-orb-fallback" style="display:none;">🎵</span>
+            </button>
+            <div class="mini-now-playing" id="miniNowPlaying">
+              <span class="mini-now-title" id="miniNowTitle"></span>
+              <button
+                type="button"
+                class="mini-toggle-btn"
+                id="miniToggleBtn"
+                onclick="togglePlayPause()"
+                title="Пауза / Воспроизведение"
+                aria-label="Пауза / Воспроизведение"
+              >⏸</button>
+            </div>
+          </div>
+          <div class="room-sub">
+            <span class="live-dot"></span>
+            <span id="onlineLabel">1 онлайн · Анонимная группа</span>
+          </div>
+        </div>
+      </div>
+      <button class="ios-btn" id="copyBtn" onclick="copyInvite()">Ссылка</button>
+    </div>
+
+    <div class="profile-capsule liquid-glass">
+      <div class="user-badge">
+        <div class="avatar" id="myAvatar"></div>
+        <div class="meta">
+          <div class="nick" id="myNick"></div>
+          <div class="fixed-id" id="myId"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center"><button class="ios-btn" onclick="openPeopleSheet()">Люди</button><button class="ios-btn" onclick="openSheet()">Изменить</button></div>
+    </div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="system-pill">В этой группе все пишут анонимно · ID постоянный</div>
+  </div>
+
+  <div class="composer-dock">
+    <form class="composer-pill" onsubmit="sendMessage(event)">
+      <input type="text" id="msgInput" placeholder="Анонимное сообщение..." autocomplete="off" required />
+      <button type="submit" class="send-circle" aria-label="Отправить">↑</button>
+    </form>
+    <div class="protected-footer">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.05.62-2.71 1.4-.58.68-1.1 1.78-.96 2.84 1.04.08 2.07-.52 2.71-1.3z"/>
+      </svg>
+      <span>Сайт защищён</span>
+    </div>
+  </div>
+</div>
+
+<!-- Окно профиля -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeAllSheets()"></div>
+<div class="glass-sheet" id="profileSheet">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-header">
+    <div>
+      <div class="sheet-title">Анонимный профиль</div>
+      <div class="sheet-sub">ID сохраняется постоянно, меняйте ник и аватар по желанию</div>
+    </div>
+    <button class="ios-btn" onclick="closeAllSheets()">✕</button>
+  </div>
+
+  <div class="ios-input-group">
+    <input type="text" class="ios-input" id="nickInput" maxlength="20" placeholder="Введите новый ник..." />
+    <button type="button" class="ios-btn" onclick="randomizeNick()">Рандом</button>
+  </div>
+
+  <div class="preset-avatars-block">
+    <div class="preset-label">Выберите аватар (1–5):</div>
+    <div class="preset-grid" id="presetGrid"></div>
+  </div>
+
+  <div class="sheet-footer">
+    <label class="upload-label" for="avatarFile">
+      Фото из галереи
+    </label>
+    <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="handleFileUpload(event)" />
+    <button type="button" class="ios-btn primary" onclick="saveProfile()">Готово</button>
+  </div>
+</div>
+
+<!-- Пользователи и личные сообщения -->
+<div class="glass-sheet" id="peopleSheet">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-header">
+    <div><div class="sheet-title" id="peopleTitle">Пользователи</div><div class="sheet-sub" id="peopleSub">Общие профили и личные сообщения</div></div>
+    <button class="ios-btn" onclick="closeAllSheets()">✕</button>
+  </div>
+  <div id="peopleList" class="people-list"><div class="people-empty">Подключаемся к серверу…</div></div>
+  <div id="dmPanel" style="display:none">
+    <button class="ios-btn" style="margin:12px 0" onclick="backToPeople()">← Все пользователи</button>
+    <div id="dmMessages" class="dm-messages"></div>
+    <form class="composer-pill" onsubmit="sendPrivateMessage(event)" style="margin-top:10px">
+      <input type="text" id="dmInput" placeholder="Личное сообщение…" maxlength="2000" autocomplete="off" required />
+      <button type="submit" class="send-circle" aria-label="Отправить">↑</button>
+    </form>
+  </div>
+</div>
+
+<!-- Окно музыки -->
+<div class="glass-sheet" id="musicSheet">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-header">
+    <div>
+      <div class="sheet-title">Музыка группы</div>
+      <div class="sheet-sub">Можно переписываться, пока играет музыка · anon.42spina</div>
+    </div>
+    <button class="ios-btn" onclick="closeAllSheets()">✕</button>
+  </div>
+  <div id="musicSheetBody"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const americanNames = [
+    "LaserDim", "DonutTrump", "VortexMax", "NeonFlex", "PixelKing",
+    "CryptoGhost", "TurboVibe", "ShadowDrop", "HyperNova", "GlitchBoss",
+    "CyberPulse", "SonicDrift", "AstroKilla", "PhantomX", "BlazeMafia",
+    "NitroRex", "QuantumBro", "EchoViper", "ZappTrap", "MadCheetah"
+  ];
+
+  const PRESET_GIFS = [
+    { num: 1, file: "r.gif", label: "Аватар 1" },
+    { num: 2, file: "e.gif", label: "Аватар 2" },
+    { num: 3, file: "t.gif", label: "Аватар 3" },
+    { num: 4, file: "q.gif", label: "Аватар 4" },
+    { num: 5, file: "s.gif", label: "Аватар 5" }
+  ];
+
+  const MUSIC_TRACKS = [
+    { title: "Ural", src: "ural.mpeg" },
+    { title: "Uide", src: "uide.mpeg" },
+    { title: "TV", src: "tv.mpeg" },
+    { title: "Lazer", src: "lazer.mpeg" },
+    { title: "Phatom", src: "phatom.mpeg" }
+  ];
+
+  const roomId = new URLSearchParams(location.search).get("room") || "anon.42spina";
+  document.getElementById("roomLabel").textContent = "anon.42spina";
+
+  // Состояние аудиоплеера
+  const bgAudio = document.getElementById("bgAudioPlayer");
+  let currentTrackIndex = -1;
+
+  function updateMusicIndicators() {
+    const isPlaying = currentTrackIndex >= 0 && !bgAudio.paused;
+    const track = currentTrackIndex >= 0 ? MUSIC_TRACKS[currentTrackIndex] : null;
+
+    const orbBtn = document.getElementById("musicOrbBtn");
+    const miniBox = document.getElementById("miniNowPlaying");
+    const miniTitle = document.getElementById("miniNowTitle");
+    const miniToggle = document.getElementById("miniToggleBtn");
+    const activeTitleEl = document.getElementById("activeTrackTitle");
+
+    if (orbBtn) {
+      orbBtn.classList.toggle("playing", isPlaying);
+    }
+
+    if (miniBox && miniTitle && miniToggle) {
+      if (track) {
+        miniBox.classList.add("visible");
+        miniTitle.textContent = track.title;
+        miniToggle.textContent = isPlaying ? "⏸" : "▶";
+      } else {
+        miniBox.classList.remove("visible");
+      }
+    }
+
+    if (activeTitleEl) {
+      activeTitleEl.textContent = track
+        ? `${track.title} (${isPlaying ? "играет" : "пауза"})`
+        : "Выберите трек";
+    }
+
+    document.querySelectorAll(".music-track-item").forEach((el, idx) => {
+      const badge = el.querySelector(".music-track-badge");
+      const isCurrent = idx === currentTrackIndex;
+      el.classList.toggle("active", isCurrent && isPlaying);
+      if (badge) {
+        if (isCurrent && isPlaying) badge.textContent = "⏸ Играет";
+        else if (isCurrent) badge.textContent = "▶ Пауза";
+        else badge.textContent = "▶ Включить";
+      }
+    });
+  }
+
+  function playTrackAt(index) {
+    if (!MUSIC_TRACKS[index]) return;
+    if (currentTrackIndex === index) {
+      togglePlayPause();
+      return;
+    }
+    currentTrackIndex = index;
+    bgAudio.src = MUSIC_TRACKS[index].src;
+    bgAudio.play().catch(() => {});
+    updateMusicIndicators();
+  }
+
+  function togglePlayPause() {
+    if (currentTrackIndex < 0 && MUSIC_TRACKS.length) {
+      playTrackAt(0);
+      return;
+    }
+    if (bgAudio.paused) {
+      bgAudio.play().catch(() => {});
+    } else {
+      bgAudio.pause();
+    }
+    updateMusicIndicators();
+  }
+
+  bgAudio.addEventListener("play", updateMusicIndicators);
+  bgAudio.addEventListener("pause", updateMusicIndicators);
+  bgAudio.addEventListener("ended", () => {
+    if (currentTrackIndex + 1 < MUSIC_TRACKS.length) {
+      playTrackAt(currentTrackIndex + 1);
+    } else {
+      updateMusicIndicators();
+    }
+  });
+
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function makeRandomNick() {
+    return americanNames[randInt(0, americanNames.length - 1)];
+  }
+
+  function makeRandomId() {
+    return "ID-" + randInt(100000, 999999);
+  }
+
+  const STORAGE_KEY = "anon_chat_global_profile_v4";
+
+  function loadOrCreateProfile() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id && parsed.nick) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    const initialProfile = {
+      id: makeRandomId(),
+      nick: makeRandomNick(),
+      avatarType: "gif",
+      avatarValue: PRESET_GIFS[0].file
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProfile));
+    } catch (e) {
+      // Чат продолжит работать и без сохранения профиля в браузере.
+    }
+    return initialProfile;
+  }
+
+  let profile = loadOrCreateProfile();
+  function syncProfileWithServer() {
+    if (socket && socket.connected) {
+      socket.emit("join_room", { roomId, profile });
+    }
+  }
+
+  function persistProfile(syncServer = false) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    } catch (e) {
+      // Например, браузер запретил хранилище или закончилось место.
+    }
+    renderProfile();
+    renderPresetGrid();
+    if (syncServer) syncProfileWithServer();
+  }
+
+  function getInitials(nick) {
+    return (nick || "ID")
+      .split(/\s+/)
+      .map(w => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  function renderAvatarElement(container, p) {
+    container.innerHTML = "";
+    if ((p.avatarType === "image" || p.avatarType === "gif") && p.avatarValue) {
+      const img = document.createElement("img");
+      img.src = p.avatarValue;
+      img.alt = p.nick || "Аватар";
+      img.onerror = () => {
+        img.remove();
+      };
+      container.appendChild(img);
+    } else {
+      container.textContent = getInitials(p.nick);
+    }
+  }
+
+  function selectPresetGif(file) {
+    profile.avatarType = "gif";
+    profile.avatarValue = file;
+    persistProfile(true);
+  }
+
+  function renderPresetGrid() {
+    const grid = document.getElementById("presetGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    PRESET_GIFS.forEach(item => {
+      const card = document.createElement("button");
+      card.type = "button";
+      const isSelected = profile.avatarType === "gif" && profile.avatarValue === item.file;
+      card.className = isSelected ? "preset-card selected" : "preset-card";
+      card.onclick = () => selectPresetGif(item.file);
+
+      const thumb = document.createElement("div");
+      thumb.className = "preset-thumb";
+
+      const img = document.createElement("img");
+      img.src = item.file;
+      img.alt = item.label;
+      img.onerror = () => {
+        img.remove();
+      };
+      thumb.appendChild(img);
+
+      const numEl = document.createElement("div");
+      numEl.className = "preset-num";
+      numEl.textContent = String(item.num);
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "preset-name";
+      nameEl.textContent = item.label;
+
+      card.appendChild(thumb);
+      card.appendChild(numEl);
+      card.appendChild(nameEl);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderProfile() {
+    document.getElementById("myNick").textContent = profile.nick;
+    document.getElementById("myId").textContent = profile.id;
+    document.getElementById("nickInput").value = profile.nick;
+    renderAvatarElement(document.getElementById("myAvatar"), profile);
+  }
+
+  // Музыка продолжает играть при закрытии окна
+  function closeAllSheets() {
+    document.getElementById("sheetBackdrop").classList.remove("open");
+    ["profileSheet", "musicSheet", "peopleSheet"].forEach(id => document.getElementById(id)?.classList.remove("open"));
+  }
+
+  function openSheet() {
+    closeAllSheets();
+    document.getElementById("nickInput").value = profile.nick;
+    renderPresetGrid();
+    document.getElementById("sheetBackdrop").classList.add("open");
+    document.getElementById("profileSheet").classList.add("open");
+  }
+
+  function closeSheet() {
+    closeAllSheets();
+  }
+
+  function renderMusicSheet() {
+    const body = document.getElementById("musicSheetBody");
+    if (!body) return;
+
+    if (!MUSIC_TRACKS.length) {
+      body.innerHTML = `
+        <div class="music-empty-box">
+          <div class="music-cover-preview">
+            <img src="u.jpg" alt="u.jpg" onerror="this.style.display='none'; this.parentElement.textContent='🎵';" />
+          </div>
+          <div class="music-empty-title">Пока нет музыки</div>
+          <div class="music-empty-sub">Скоро здесь появятся треки</div>
+        </div>
+      `;
+      return;
+    }
+
+    body.innerHTML = `
+      <div class="persistent-player-card">
+        <div class="persistent-player-head">
+          <span id="activeTrackTitle">Выберите трек</span>
+          <button type="button" class="ios-btn" style="padding:5px 10px;font-size:11px;" onclick="closeAllSheets()">Вернуться в чат</button>
+        </div>
+        <div id="audioMountPoint"></div>
+      </div>
+      <div class="music-track-list" id="musicTrackList"></div>
+    `;
+
+    const mountPoint = document.getElementById("audioMountPoint");
+    bgAudio.controls = true;
+    mountPoint.appendChild(bgAudio);
+
+    const list = document.getElementById("musicTrackList");
+    MUSIC_TRACKS.forEach((track, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "music-track-item";
+      btn.onclick = () => playTrackAt(idx);
+      btn.innerHTML = `
+        <div class="music-track-info">
+          <span class="music-track-name">${idx + 1}. ${escapeHtml(track.title)}</span>
+          <span class="music-track-file">${escapeHtml(track.src)}</span>
+        </div>
+        <span class="music-track-badge">▶ Включить</span>
+      `;
+      list.appendChild(btn);
+    });
+
+    updateMusicIndicators();
+  }
+
+  function openMusicSheet() {
+    closeAllSheets();
+    renderMusicSheet();
+    document.getElementById("sheetBackdrop").classList.add("open");
+    document.getElementById("musicSheet").classList.add("open");
+  }
+
+  function randomizeNick() {
+    document.getElementById("nickInput").value = makeRandomNick();
+  }
+
+  function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type === "image/gif") {
+      const reader = new FileReader();
+      reader.onload = () => {
+        profile.avatarType = "gif";
+        profile.avatarValue = reader.result;
+        persistProfile(true);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const size = 120;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+
+        profile.avatarType = "image";
+        profile.avatarValue = canvas.toDataURL("image/webp", 0.72);
+        persistProfile(true);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveProfile() {
+    const val = document.getElementById("nickInput").value.trim();
+    if (val) profile.nick = val;
+    persistProfile(true);
+    closeSheet();
+  }
+
+  function copyInvite() {
+    const inviteUrl = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomId)}`;
+    const btn = document.getElementById("copyBtn");
+    const showCopied = () => {
+      btn.textContent = "Скопировано ✓";
+      setTimeout(() => { btn.textContent = "Ссылка"; }, 1800);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(inviteUrl).then(showCopied).catch(() => {});
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = inviteUrl;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showCopied();
+    }
+  }
+
+  function nowTime() {
+    const d = new Date();
+    return d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+  }
+
+  function appendMessageToUI(msg) {
+    const msgBox = document.getElementById("messages");
+    const isMe = msg.id === profile.id;
+    const row = document.createElement("div");
+    row.className = isMe ? "msg-row me" : "msg-row";
+
+    const av = document.createElement("div");
+    av.className = "avatar";
+    renderAvatarElement(av, msg);
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.innerHTML = `
+      <div class="msg-head">
+        <span class="msg-nick">${escapeHtml(msg.nick)}</span>
+        <span class="msg-id">${escapeHtml(msg.id)}</span>
+      </div>
+      <div class="msg-text">${escapeHtml(msg.text)}</div>
+      <div class="msg-time">${escapeHtml(msg.time || nowTime())}</div>
+    `;
+
+    row.appendChild(av);
+    row.appendChild(bubble);
+    msgBox.appendChild(row);
+    msgBox.scrollTop = msgBox.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[m]));
+  }
+
+  renderProfile();
+  renderPresetGrid();
+
+  let publicUsers = [];
+  let activeDmUser = null;
+  let dmHistory = [];
+  const socket = typeof io !== "undefined" ? io() : null;
+
+  function openPeopleSheet() {
+    closeAllSheets();
+    document.getElementById("sheetBackdrop").classList.add("open");
+    document.getElementById("peopleSheet").classList.add("open");
+    document.getElementById("peopleList").style.display = "flex";
+    document.getElementById("dmPanel").style.display = "none";
+    document.getElementById("peopleTitle").textContent = "Пользователи";
+    document.getElementById("peopleSub").textContent = "Нажмите на пользователя, чтобы написать лично";
+    if (socket?.connected) socket.emit("get_users", { roomId });
+    renderPeople();
+  }
+
+  function renderPeople() {
+    const list = document.getElementById("peopleList");
+    if (!publicUsers.length) { list.innerHTML = '<div class="people-empty">Пока нет других пользователей. Пригласите друзей по ссылке.</div>'; return; }
+    list.innerHTML = "";
+    publicUsers.filter(u => u.id !== profile.id).forEach(user => {
+      const row = document.createElement("button"); row.className = "person-row"; row.type = "button";
+      const avatar = document.createElement("div"); avatar.className = "avatar"; renderAvatarElement(avatar, user);
+      const info = document.createElement("div"); info.className = "person-info";
+      const nick = document.createElement("div"); nick.className = "person-nick"; nick.textContent = user.nick;
+      const id = document.createElement("div"); id.className = "person-id"; id.textContent = user.id;
+      info.append(nick,id); const dot=document.createElement("span"); dot.className="online-dot"; dot.style.opacity=user.isOnline?"1":".25"; dot.title=user.isOnline?"Онлайн":"Не в сети";
+      row.append(avatar,info,dot); row.onclick=()=>openDm(user); list.appendChild(row);
+    });
+  }
+
+  function backToPeople() {
+    activeDmUser=null; document.getElementById("peopleList").style.display="flex";
+    document.getElementById("dmPanel").style.display="none";
+    document.getElementById("peopleTitle").textContent="Пользователи";
+    if(socket?.connected) socket.emit("get_users",{roomId});
+  }
+
+  function openDm(user) {
+    activeDmUser=user; dmHistory=[];
+    document.getElementById("peopleList").style.display="none";
+    document.getElementById("dmPanel").style.display="block";
+    document.getElementById("peopleTitle").textContent=user.nick;
+    document.getElementById("peopleSub").textContent="Личная переписка · "+user.id;
+    document.getElementById("dmMessages").innerHTML='<div class="people-empty">Загрузка переписки…</div>';
+    if(socket?.connected) socket.emit("get_dm_history",{toId:user.id});
+    document.getElementById("dmInput").focus();
+  }
+
+  function renderDm() {
+    const box=document.getElementById("dmMessages"); box.innerHTML="";
+    if(!dmHistory.length) box.innerHTML='<div class="people-empty">Начните личную переписку</div>';
+    dmHistory.forEach(m=>{ const el=document.createElement("div"); el.className="dm-bubble"+(m.fromId===profile.id?" mine":"");
+      const meta=document.createElement("div"); meta.className="dm-meta"; meta.textContent=(m.fromId===profile.id?"Вы":m.fromNick)+" · "+(m.time||"");
+      const body=document.createElement("div"); body.textContent=m.text; el.append(meta,body); box.appendChild(el); });
+    box.scrollTop=box.scrollHeight;
+  }
+
+  function sendPrivateMessage(e) {
+    e.preventDefault(); const input=document.getElementById("dmInput"), text=input.value.trim();
+    if(!text || !activeDmUser || !socket?.connected) { alert("Нет соединения с сервером"); return; }
+    socket.emit("send_dm",{toId:activeDmUser.id,text}); input.value="";
+  }
+
+  if (socket) {
+    socket.on("connect", () => { syncProfileWithServer(); socket.emit("get_users",{roomId}); });
+    socket.on("connect_error", () => { document.getElementById("onlineLabel").textContent="Нет связи с сервером"; });
+    socket.on("online_count", count => { document.getElementById("onlineLabel").textContent=`${count} онлайн · Анонимная группа`; });
+    socket.on("users_list", users => { publicUsers=users||[]; renderPeople(); });
+    socket.on("chat_history", history => { const box=document.getElementById("messages"); box.innerHTML='<div class="system-pill">В этой группе все пишут анонимно · ID постоянный</div>'; history.forEach(appendMessageToUI); });
+    socket.on("new_message", msg => appendMessageToUI(msg));
+    socket.on("dm_history", messages => { dmHistory=messages||[]; renderDm(); });
+    socket.on("new_dm", message => { if(activeDmUser && [message.fromId,message.toId].includes(activeDmUser.id)) { dmHistory.push(message); renderDm(); } });
+    socket.on("server_error", message => alert(message || "Ошибка сервера"));
+  }
+
+  function sendMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById("msgInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (socket && socket.connected) {
+      socket.emit("send_message", { roomId, profile, text });
+    } else {
+      alert("Сервер недоступен. Сообщение не отправлено.");
+      return;
+    }
+    input.value = "";
+  }
+</script>
+</body>
+</html>
