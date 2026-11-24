@@ -9,7 +9,11 @@ const PORT = Number(process.env.PORT || 3000);
 const app = express();
 app.disable('x-powered-by');
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+app.use(express.static(__dirname, { extensions: ['html'] }));
 app.get('/health', (_req, res) => res.json({ ok: true }));
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
